@@ -8,17 +8,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetCollection(name string) (*mongo.Collection, error) {
+func GetCollection(name string) *mongo.Collection {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	context, cancle := context.WithTimeout(context.TODO(), time.Second*10)
 	defer cancle()
 
 	client, err := mongo.Connect(context, clientOptions)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	db := client.Database("RMS")
-
-	return db.Collection(name), nil
+	return client.Database("RMS").Collection(name)
 }

@@ -1,18 +1,15 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
+	routes.UserRoutes(router) // called before authentication to check if user is authenticated before having access to other routes
 	router.Use(middleware.Authentication())
 
-	routes.UserRoutes(router)
 	routes.FoodRoutes(router)
 	routes.MenuRoutes(router)
 	routes.TableRoutes(router)
