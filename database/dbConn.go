@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +16,7 @@ func GetCollection(name string) *mongo.Collection {
 
 	client, err := mongo.Connect(context, clientOptions)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Error creating database client: %v", err))
 	}
 
 	return client.Database("RMS").Collection(name)
