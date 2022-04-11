@@ -1,6 +1,9 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"restaurant-management-API/controllers"
+)
 
 func UserRoutes(r *gin.Engine) {
 	r.GET("/users", controller.GetUsers())

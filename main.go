@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"restaurant-management-API/middleware"
+	"restaurant-management-API/routes"
 )
 
 func main() {
