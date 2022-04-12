@@ -1,6 +1,9 @@
 package controller
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,10 +35,10 @@ func UpdateFood() gin.HandlerFunc {
 // 	return int(math.Round(number))
 // }
 
-// func toFixed(number float64, precision string) float64 {
-// 	num := fmt.Sprintf("%."+precision+"f", number)
+func toFixed(number float64, precision string) float64 {
+	num := fmt.Sprintf("%."+precision+"f", number)
 
-// 	f, _ := strconv.ParseFloat(num, 64)
+	f, _ := strconv.ParseFloat(num, 64)
 
-// 	return f
-// }
+	return f
+}
