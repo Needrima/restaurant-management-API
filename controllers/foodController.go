@@ -22,7 +22,59 @@ var (
 
 func GetFoods() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		recordPerPage, err := strconv.Atoi(ctx.Query("recordPerPage"))
+		if err != nil || recordPerPage < 1 {
+			recordPerPage = 10
+		}
 
+		page, err := strconv.Atoi(ctx.Query("page"))
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		startIndex := (page-1) * recordPerPage
+		startIndex, err = strconv.Atoi(ctx.Query("startIndex"))
+
+		matchStage := bson.M{"$match": bson.M{}} // match all documents
+
+		// group by
+		groupStage := bson.M{"$group": bson.M{
+			"_id": bson.M{"_id": "null"}, // _id field where _id is null
+			"total_count": bson.M{"$sum": 1}, // new total_count field which is total document count
+			"data": bson.M{"$push": "$$ROOT"}, // new data field which is a slice of documents for each distinct _id
+		}}
+		
+		// project by
+		projectStage := bson.M{"$project": bson.M{
+			"_id": 0, // ignoring _id field
+			"total_count": 1, // including total count field
+			"food_item": bson.M{ // new food_item field which is a slice of data from data field containing the required number record based on the page( 10 records if recordPerPage is not specified)
+				"$slice": []interface{}{"$data", startIndex, recordPerPage},
+			},
+		}}
+
+		foodCollection := database.GetCollection("food")
+
+		cursor, err := foodCollection.Aggregate(context.TODO(), []bson.M{matchStage, groupStage, projectStage})
+		if err != nil {
+			log.Println("getfoods aggregation err:", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "soemthing went wrong",
+			})
+			return
+		}
+		defer cursor.Close(context.TODO())
+ 
+		var foods []bson.M
+		if err := cursor.All(context.TODO(), &foods); err != nil {
+			log.Println("Error decoding cursor:", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "could not get foods",
+			})
+			return
+		}
+		
+		ctx.JSON(http.StatusOK, foods)
 	}
 }
 
@@ -75,8 +127,8 @@ func CreateFood() gin.HandlerFunc {
 			return
 		}
 
-		food.CreatedAt = time.Now().Format(time.ANSIC)
-		food.UpdateAt = time.Now().Format(time.ANSIC)
+		food.CreatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
+		food.UpdateAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
 		food.ID = primitive.NewObjectID()
 		food.FoodId = food.ID.Hex()
@@ -100,7 +152,42 @@ func CreateFood() gin.HandlerFunc {
 
 func UpdateFood() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		var food models.Food
+		var menu models.Menu
 
+		foodId := ctx.Param("food_id")
+
+		err := ctx.BindJSON(&food)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		menuCollection := database.GetCollection("menu")
+		if err := menuCollection.FindOne(context.TODO(), bson.M{"menu_id": food.MenuId}).Decode(&menu); err != nil {
+			log.Println("invalid menu id:", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid menu id",
+			})
+			return
+		}
+
+		food.UpdateAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
+
+		foodCollection := database.GetCollection("database")
+
+		updateResult, err := foodCollection.UpdateOne(context.TODO(), bson.M{"food_id": foodId}, bson.M{"$set": food})
+		if err != nil {
+			log.Println("error updating food:", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "could not update food",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, updateResult)
 	}
 }
 
