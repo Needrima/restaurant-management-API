@@ -32,23 +32,23 @@ func GetFoods() gin.HandlerFunc {
 			page = 1
 		}
 
-		startIndex := (page-1) * recordPerPage
-		startIndex, err = strconv.Atoi(ctx.Query("startIndex"))
+		startIndex := (page - 1) * recordPerPage
+		// startIndex, err = strconv.Atoi(ctx.Query("startIndex"))
 
 		matchStage := bson.M{"$match": bson.M{}} // match all documents
 
 		// group by
 		groupStage := bson.M{"$group": bson.M{
-			"_id": bson.M{"_id": "null"}, // _id field where _id is null
-			"total_count": bson.M{"$sum": 1}, // new total_count field which is total document count
-			"data": bson.M{"$push": "$$ROOT"}, // new data field which is a slice of documents for each distinct _id
+			"_id":         bson.M{"_id": "null"},     // _id field where _id is null
+			"total_count": bson.M{"$sum": 1},         // new total_count field which is total document count
+			"data":        bson.M{"$push": "$$ROOT"}, // new data field which is a slice of documents for each distinct _id
 		}}
-		
+
 		// project by
 		projectStage := bson.M{"$project": bson.M{
-			"_id": 0, // ignoring _id field
+			"_id":         0, // ignoring _id field
 			"total_count": 1, // including total count field
-			"food_item": bson.M{ // new food_item field which is a slice of data from data field containing the required number record based on the page( 10 records if recordPerPage is not specified)
+			"food_items": bson.M{ // new food_items field which is a slice of data from data field containing the required number record based on the page( 10 records if recordPerPage is not specified)
 				"$slice": []interface{}{"$data", startIndex, recordPerPage},
 			},
 		}}
@@ -64,7 +64,7 @@ func GetFoods() gin.HandlerFunc {
 			return
 		}
 		defer cursor.Close(context.TODO())
- 
+
 		var foods []bson.M
 		if err := cursor.All(context.TODO(), &foods); err != nil {
 			log.Println("Error decoding cursor:", err)
@@ -73,7 +73,7 @@ func GetFoods() gin.HandlerFunc {
 			})
 			return
 		}
-		
+
 		ctx.JSON(http.StatusOK, foods)
 	}
 }
@@ -128,7 +128,7 @@ func CreateFood() gin.HandlerFunc {
 		}
 
 		food.CreatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
-		food.UpdateAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
+		food.UpdatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
 		food.ID = primitive.NewObjectID()
 		food.FoodId = food.ID.Hex()
@@ -176,8 +176,7 @@ func UpdateFood() gin.HandlerFunc {
 
 		food.UpdateAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
-		foodCollection := database.GetCollection("database")
-
+		foodCollection := database.GetCollection("food")
 		updateResult, err := foodCollection.UpdateOne(context.TODO(), bson.M{"food_id": foodId}, bson.M{"$set": food})
 		if err != nil {
 			log.Println("error updating food:", err)
