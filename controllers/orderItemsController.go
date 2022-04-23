@@ -102,7 +102,7 @@ func CreateOrderItem() gin.HandlerFunc {
 		orderItemcollection := database.GetCollection("orderitem")
 		insertresult, err := orderItemcollection.InsertMany(context.TODO(), orderItemsToBeInserted)
 		if err != nil {
-			log.Println("could not insert order items into database:",err)
+			log.Println("could not insert order items into database:", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": "could not insert order items into database",
 			})
