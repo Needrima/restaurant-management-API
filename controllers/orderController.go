@@ -138,7 +138,7 @@ func UpdateOrder() gin.HandlerFunc {
 
 		order.UpdatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
-		ordersCollection := database.GetCollection("orders")
+		ordersCollection := database.GetCollection("order")
 		updateResult, err := ordersCollection.UpdateOne(context.TODO(), bson.M{"order_id": orderId}, bson.M{"$set": order})
 		if err != nil {
 			log.Println("error updating order:", err)

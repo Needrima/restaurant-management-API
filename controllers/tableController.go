@@ -111,8 +111,8 @@ func UpdateTable() gin.HandlerFunc {
 				"error": "something went wrong",
 			})
 			return
-		}	
-		
+		}
+
 		updatedtable.UpdatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
 		tableCollection := database.GetCollection("table")

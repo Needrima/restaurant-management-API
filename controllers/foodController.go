@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/bluesuncorp/validator.v5"
 )
 
 var (
@@ -174,7 +174,7 @@ func UpdateFood() gin.HandlerFunc {
 			return
 		}
 
-		food.UpdateAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
+		food.UpdatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
 		foodCollection := database.GetCollection("food")
 		updateResult, err := foodCollection.UpdateOne(context.TODO(), bson.M{"food_id": foodId}, bson.M{"$set": food})

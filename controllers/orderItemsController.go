@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func GetOrderItems() gin.HandlerFunc {
@@ -63,7 +64,6 @@ func GetOrderItem() gin.HandlerFunc {
 func CreateOrderItem() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var orderItemPack models.OrderItemPack
-		var order models.Order
 
 		if err := ctx.BindJSON(&orderItemPack); err != nil {
 			log.Println("wrong format from fron end:", err)
@@ -73,6 +73,7 @@ func CreateOrderItem() gin.HandlerFunc {
 			return
 		}
 
+		var order models.Order
 		order.OrderDate, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
 		orderItemsToBeInserted := []interface{}{}
@@ -170,5 +171,157 @@ func GetOrderItemsByOrder() gin.HandlerFunc {
 }
 
 func ItemsByOrder(id string) ([]primitive.M, error) {
+	matchStage := bson.D{
+		{
+			Key:   "$match",
+			Value: bson.D{{Key: "order_id", Value: id}},
+		},
+	}
 
+	foodLookupStage := bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.D{
+				{Key: "from", Value: "food"},
+				{Key: "localField", Value: "food_id"},
+				{Key: "foreignField", Value: "food_id"},
+				{Key: "as", Value: "food"},
+			},
+		},
+	}
+
+	foodUnwindStage := bson.D{
+		{
+			Key: "$unwind",
+			Value: bson.D{
+				{
+					Key:   "path",
+					Value: "$food",
+				},
+				{
+					Key:   "preserveNullAndEmptyArrays",
+					Value: true,
+				},
+			},
+		},
+	}
+
+	orderLookupStage := bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.D{
+				{Key: "from", Value: "order"},
+				{Key: "localField", Value: "order_id"},
+				{Key: "foreignField", Value: "order_id"},
+				{Key: "as", Value: "order"},
+			},
+		},
+	}
+
+	orderUnwindStage := bson.D{
+		{
+			Key: "$unwind",
+			Value: bson.D{
+				{
+					Key:   "path",
+					Value: "$order",
+				},
+				{
+					Key:   "preserveNullAndEmptyArrays",
+					Value: true,
+				},
+			},
+		},
+	}
+
+	tableLookupStage := bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.D{
+				{Key: "from", Value: "table"},
+				{Key: "localField", Value: "order.table_id"},
+				{Key: "foreignField", Value: "table_id"},
+				{Key: "as", Value: "table"},
+			},
+		},
+	}
+
+	tableUnwindStage := bson.D{
+		{
+			Key: "$unwind",
+			Value: bson.D{
+				{
+					Key:   "path",
+					Value: "$table",
+				},
+				{
+					Key:   "preserveNullAndEmptyArrays",
+					Value: true,
+				},
+			},
+		},
+	}
+
+	projectStage := bson.D{
+		{
+			Key: "$project",
+			Value: bson.D{
+				{"id", 0},
+				{"total_count", 1},
+				{"amount", "$food.price"},
+				{"food_name", "$food.name"},
+				{"food_image", "$food.food_image"},
+				{"table_number", "$table.table_number"},
+				{"table_id", "$table.table_id"},
+				{"order_id", "$order.order_id"},
+				{"price", "$food.price"},
+				{"quantity", 1},
+			},
+		},
+	}
+
+	groupStage := bson.D{{"$group", bson.D{
+		{"_id", bson.D{
+			{"order_id", "$order_id"},
+			{"table_id", "$table_id"},
+			{"table_number", "$table_number"},
+		}},
+		{"payment_due", bson.D{{"$sum", "$amount"}}},
+		{"total_count", bson.D{{"$sum", 1}}},
+		{"order_items", bson.D{{"$push", "$$ROOT"}}},
+	}}}
+
+	nextProjectStage := bson.D{{"$project", bson.D{
+		{"_id", 0},
+		{"payment_due", 1},
+		{"total_count", 1},
+		{"table_number", "$_id.table_number"},
+		{"order_items", 1},
+	}}}
+
+	orderItemCollection := database.GetCollection("orderitem")
+	cursor, err := orderItemCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		matchStage,
+		foodLookupStage,
+		foodUnwindStage,
+		orderLookupStage,
+		orderUnwindStage,
+		tableLookupStage,
+		tableUnwindStage,
+		projectStage,
+		groupStage,
+		nextProjectStage,
+	})
+
+	if err != nil {
+		return []primitive.M{}, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var orderItems []primitive.M
+	if err := cursor.All(context.TODO(), &orderItems); err != nil {
+		return []primitive.M{}, err
+	}
+
+	return orderItems, nil
 }
