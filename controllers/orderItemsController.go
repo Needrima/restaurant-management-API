@@ -173,33 +173,33 @@ func GetOrderItemsByOrder() gin.HandlerFunc {
 func ItemsByOrder(id string) ([]primitive.M, error) {
 	matchStage := bson.D{
 		{
-			Key:   "$match",
-			Value: bson.D{{Key: "order_id", Value: id}},
+			"$match",
+			Value: bson.D{{"order_id", Value: id}},
 		},
 	}
 
 	foodLookupStage := bson.D{
 		{
-			Key: "$lookup",
+			"$lookup",
 			Value: bson.D{
-				{Key: "from", Value: "food"},
-				{Key: "localField", Value: "food_id"},
-				{Key: "foreignField", Value: "food_id"},
-				{Key: "as", Value: "food"},
+				{"from", Value: "food"},
+				{"localField", Value: "food_id"},
+				{"foreignField", Value: "food_id"},
+				{"as", Value: "food"},
 			},
 		},
 	}
 
 	foodUnwindStage := bson.D{
 		{
-			Key: "$unwind",
+			"$unwind",
 			Value: bson.D{
 				{
-					Key:   "path",
+					"path",
 					Value: "$food",
 				},
 				{
-					Key:   "preserveNullAndEmptyArrays",
+					"preserveNullAndEmptyArrays",
 					Value: true,
 				},
 			},
@@ -208,26 +208,26 @@ func ItemsByOrder(id string) ([]primitive.M, error) {
 
 	orderLookupStage := bson.D{
 		{
-			Key: "$lookup",
+			"$lookup",
 			Value: bson.D{
-				{Key: "from", Value: "order"},
-				{Key: "localField", Value: "order_id"},
-				{Key: "foreignField", Value: "order_id"},
-				{Key: "as", Value: "order"},
+				{"from", Value: "order"},
+				{"localField", Value: "order_id"},
+				{"foreignField", Value: "order_id"},
+				{"as", Value: "order"},
 			},
 		},
 	}
 
 	orderUnwindStage := bson.D{
 		{
-			Key: "$unwind",
+			"$unwind",
 			Value: bson.D{
 				{
-					Key:   "path",
+					"path",
 					Value: "$order",
 				},
 				{
-					Key:   "preserveNullAndEmptyArrays",
+					"preserveNullAndEmptyArrays",
 					Value: true,
 				},
 			},
@@ -236,26 +236,26 @@ func ItemsByOrder(id string) ([]primitive.M, error) {
 
 	tableLookupStage := bson.D{
 		{
-			Key: "$lookup",
+			"$lookup",
 			Value: bson.D{
-				{Key: "from", Value: "table"},
-				{Key: "localField", Value: "order.table_id"},
-				{Key: "foreignField", Value: "table_id"},
-				{Key: "as", Value: "table"},
+				{"from", Value: "table"},
+				{"localField", Value: "order.table_id"},
+				{"foreignField", Value: "table_id"},
+				{"as", Value: "table"},
 			},
 		},
 	}
 
 	tableUnwindStage := bson.D{
 		{
-			Key: "$unwind",
+			"$unwind",
 			Value: bson.D{
 				{
-					Key:   "path",
+					"path",
 					Value: "$table",
 				},
 				{
-					Key:   "preserveNullAndEmptyArrays",
+					"preserveNullAndEmptyArrays",
 					Value: true,
 				},
 			},
@@ -264,7 +264,7 @@ func ItemsByOrder(id string) ([]primitive.M, error) {
 
 	projectStage := bson.D{
 		{
-			Key: "$project",
+			"$project",
 			Value: bson.D{
 				{"id", 0},
 				{"total_count", 1},
