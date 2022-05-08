@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"restaurant-management-API/database"
 	"restaurant-management-API/models"
 	"time"
@@ -58,4 +59,25 @@ func UpdateUserTokens(token, refreshToken, userId string) error {
 	userCollection := database.GetCollection("user")
 	_, err := userCollection.UpdateOne(context.TODO(), bson.M{"user_id": userId}, bson.M{"$set": userUpdate})
 	return err
+}
+
+func ValidateToken(tokenString string) (*SignedDetails, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &SignedDetails{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(secretKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*SignedDetails)
+	if !ok {
+		return nil, errors.New("invalid token")
+	}
+
+	if claims.ExpiresAt < time.Now().Unix() {
+		return nil, errors.New("token has expired")
+	}
+
+	return claims, nil
 }
