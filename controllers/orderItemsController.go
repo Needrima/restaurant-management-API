@@ -172,111 +172,82 @@ func GetOrderItemsByOrder() gin.HandlerFunc {
 
 func ItemsByOrder(id string) ([]primitive.M, error) {
 	matchStage := bson.D{
-		{
-			"$match",
-			Value: bson.D{{"order_id", Value: id}},
-		},
+		{"$match", bson.D{{"order_id", id}}},
 	}
 
 	foodLookupStage := bson.D{
-		{
-			"$lookup",
-			Value: bson.D{
-				{"from", Value: "food"},
-				{"localField", Value: "food_id"},
-				{"foreignField", Value: "food_id"},
-				{"as", Value: "food"},
-			},
+		{"$lookup", bson.D{
+			{"from", "food"},
+			{"localField", "food_id"},
+			{"foreignField", "food_id"},
+			{"as", "food"},
+		},
 		},
 	}
 
 	foodUnwindStage := bson.D{
-		{
-			"$unwind",
-			Value: bson.D{
-				{
-					"path",
-					Value: "$food",
-				},
-				{
-					"preserveNullAndEmptyArrays",
-					Value: true,
-				},
+		{"$unwind", bson.D{
+			{
+				"path",
+				"$food",
 			},
+			{
+				"preserveNullAndEmptyArrays",
+				true,
+			},
+		},
 		},
 	}
 
 	orderLookupStage := bson.D{
-		{
-			"$lookup",
-			Value: bson.D{
-				{"from", Value: "order"},
-				{"localField", Value: "order_id"},
-				{"foreignField", Value: "order_id"},
-				{"as", Value: "order"},
-			},
+		{"$lookup", bson.D{
+			{"from", "order"},
+			{"localField", "order_id"},
+			{"foreignField", "order_id"},
+			{"as", "order"},
+		},
 		},
 	}
 
 	orderUnwindStage := bson.D{
-		{
-			"$unwind",
-			Value: bson.D{
-				{
-					"path",
-					Value: "$order",
-				},
-				{
-					"preserveNullAndEmptyArrays",
-					Value: true,
-				},
-			},
+		{"$unwind", bson.D{
+			{"path", "$order"},
+			{"preserveNullAndEmptyArrays", true},
+		},
 		},
 	}
 
 	tableLookupStage := bson.D{
-		{
-			"$lookup",
-			Value: bson.D{
-				{"from", Value: "table"},
-				{"localField", Value: "order.table_id"},
-				{"foreignField", Value: "table_id"},
-				{"as", Value: "table"},
-			},
+		{"$lookup", bson.D{
+			{"from", "table"},
+			{"localField", "order.table_id"},
+			{"foreignField", "table_id"},
+			{"as", "table"},
+		},
 		},
 	}
 
 	tableUnwindStage := bson.D{
-		{
-			"$unwind",
-			Value: bson.D{
-				{
-					"path",
-					Value: "$table",
-				},
-				{
-					"preserveNullAndEmptyArrays",
-					Value: true,
-				},
-			},
+		{"$unwind", bson.D{
+			{"path", "$table"},
+			{"preserveNullAndEmptyArrays", true},
+		},
 		},
 	}
 
 	projectStage := bson.D{
-		{
-			"$project",
-			Value: bson.D{
-				{"id", 0},
-				{"total_count", 1},
-				{"amount", "$food.price"},
-				{"food_name", "$food.name"},
-				{"food_image", "$food.food_image"},
-				{"table_number", "$table.table_number"},
-				{"table_id", "$table.table_id"},
-				{"order_id", "$order.order_id"},
-				{"price", "$food.price"},
-				{"quantity", 1},
-			},
+		{"$project", bson.D{
+			{"id", 0},
+			{"total_count", 1},
+			{"amount", "$food.price"},
+			{"food_name", "$food.name"},
+			{"food_image", "$food.food_image"},
+			{"table_number", "$table.table_number"},
+			{"table_id", "$table.table_id"},
+			{"order_id", "$order.order_id"},
+			{"price", "$food.price"},
+			{"quantity", 1},
+		},
 		},
 	}
 
