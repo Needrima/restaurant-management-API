@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"errors"
+	"log"
 	"restaurant-management-API/database"
 	"restaurant-management-API/models"
 	"time"
@@ -53,8 +54,7 @@ func UpdateUserTokens(token, refreshToken, userId string) error {
 		RefreshToken: refreshToken,
 	}
 
-	updated_at, _ := time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
-	userUpdate.UpdatedAt = updated_at
+	userUpdate.UpdatedAt, _ = time.Parse(time.ANSIC, time.Now().Format(time.ANSIC))
 
 	userCollection := database.GetCollection("user")
 	_, err := userCollection.UpdateOne(context.TODO(), bson.M{"user_id": userId}, bson.M{"$set": userUpdate})
@@ -67,7 +67,8 @@ func ValidateToken(tokenString string) (*SignedDetails, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		log.Println("Parsewithclaims:", err)
+		return nil, errors.New("invalid token")
 	}
 
 	claims, ok := token.Claims.(*SignedDetails)

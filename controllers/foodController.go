@@ -39,18 +39,18 @@ func GetFoods() gin.HandlerFunc {
 
 		// group by
 		groupStage := bson.M{"$group": bson.M{
-			"_id":         bson.M{"_id": "null"},     // _id field where _id is null
-			"total_count": bson.M{"$sum": 1},         // new total_count field which is total document count
-			"data":        bson.M{"$push": "$$ROOT"}, // new data field which is a slice of documents for each distinct _id
+			"_id": bson.M{"_id": "null"}, // _id field where _id is null
+			// "total_count": bson.M{"$sum": 1},         // new total_count field which is total document count
+			"data": bson.M{"$push": "$$ROOT"}, // new data field which is a slice of documents for each distinct _id
 		}}
 
 		// project by
 		projectStage := bson.M{"$project": bson.M{
-			"_id":         0, // ignoring _id field
-			"total_count": 1, // including total count field
+			"_id": 0, // ignoring _id field
 			"food_items": bson.M{ // new food_items field which is a slice of data from data field containing the required number record based on the page( 10 records if recordPerPage is not specified)
 				"$slice": []interface{}{"$data", startIndex, recordPerPage},
 			},
+			"total_count": bson.M{"$sum": "$food_items"}, // including total count field
 		}}
 
 		foodCollection := database.GetCollection("food")

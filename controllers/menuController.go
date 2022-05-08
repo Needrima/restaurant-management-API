@@ -13,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var ()
-
 func GetMenus() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		menuCollection := database.GetCollection("menu")

@@ -14,7 +14,7 @@ func Authentication() gin.HandlerFunc {
 		if token == "" {
 			log.Println("No authorization token")
 			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "no authorization header",
+				"error": "no authorization token in header",
 			})
 			ctx.Abort()
 		}

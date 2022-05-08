@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	router := gin.Default()
+	router := gin.New()
 	routes.UserRoutes(router) // called before authentication to check if user is authenticated before having access to other routes
 	router.Use(middleware.Authentication())
 
